@@ -13,7 +13,7 @@ export class Product {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, unique: true })
   name: string;
 
   @Column({ nullable: true })
@@ -22,8 +22,8 @@ export class Product {
   @Column('decimal', { precision: 10, scale: 2 })
   price: number;
 
-  @Column({ type: 'int' })
-  stock: number;
+  // @Column({ type: 'int' })
+  // stock: number;
 
   @Column({ nullable: true })
   image: string;

@@ -22,12 +22,12 @@ export class CreateProductDto {
   )
   price: number;
 
-  @IsNotEmpty({ message: 'Product Stock is required' })
-  @IsNumber(
-    { maxDecimalPlaces: 0 },
-    { message: 'Product Stock must be a whole number' },
-  )
-  stock: number;
+  // @IsNotEmpty({ message: 'Product Stock is required' })
+  // @IsNumber(
+  //   { maxDecimalPlaces: 0 },
+  //   { message: 'Product Stock must be a whole number' },
+  // )
+  // stock: number;
 
   @IsOptional()
   @IsString({ message: 'Product Image must be a string' })
