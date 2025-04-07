@@ -20,22 +20,8 @@ export class ProductsService {
   ) {}
 
   async create(createProductDto: CreateProductDto) {
-    const existingProduct = await this.productRepository.findOne({
-      where: { name: createProductDto.name },
-    });
-
-    if (existingProduct) {
-      throw new ConflictException('Product with this name already exists');
-    }
-
-    const category = await this.categoryRepository.findOneBy({
-      id: createProductDto.categoryId,
-    });
-
-    if (!category) {
-      throw new NotFoundException('Category not found');
-    }
-
+    await this.checkDuplicateName(createProductDto.name);
+    const category = await this.findCategory(createProductDto.categoryId);
     return this.productRepository.save({ ...createProductDto, category });
   }
 
@@ -43,19 +29,12 @@ export class ProductsService {
     const [products, total] = await this.productRepository.findAndCount({
       where: categoryId ? { category: { id: categoryId } } : undefined,
       relations: { category: true },
-      order: {
-        createdAt: 'DESC',
-      },
+      order: { createdAt: 'DESC' },
       take: limit,
       skip: offset,
     });
 
-    return {
-      products,
-      total,
-      limit,
-      offset,
-    };
+    return { products, total, limit, offset };
   }
 
   async findOne(id: string) {
@@ -74,26 +53,12 @@ export class ProductsService {
   async update(id: string, updateProductDto: UpdateProductDto) {
     const product = await this.findOne(id);
 
-    if (updateProductDto.name !== product.name) {
-      const existingProduct = await this.productRepository.findOne({
-        where: { name: updateProductDto.name },
-      });
-
-      if (existingProduct) {
-        throw new ConflictException('Product with this name already exists');
-      }
+    if (updateProductDto.name) {
+      await this.checkDuplicateName(updateProductDto.name, id);
     }
 
     if (updateProductDto.categoryId) {
-      const category = await this.categoryRepository.findOneBy({
-        id: updateProductDto.categoryId,
-      });
-
-      if (!category) {
-        throw new NotFoundException('Category not found');
-      }
-
-      product.category = category;
+      product.category = await this.findCategory(updateProductDto.categoryId);
     }
 
     Object.assign(product, updateProductDto);
@@ -104,5 +69,25 @@ export class ProductsService {
     const product = await this.findOne(id);
     await this.productRepository.remove(product);
     return `Product ${product.name} deleted`;
+  }
+
+  private async checkDuplicateName(name: string, excludeId?: string) {
+    const existingProduct = await this.productRepository.findOne({
+      where: { name },
+    });
+
+    if (existingProduct && existingProduct.id !== excludeId) {
+      throw new ConflictException('Product with this name already exists');
+    }
+  }
+
+  private async findCategory(categoryId: string) {
+    const category = await this.categoryRepository.findOneBy({
+      id: categoryId,
+    });
+    if (!category) {
+      throw new NotFoundException('Category not found');
+    }
+    return category;
   }
 }
